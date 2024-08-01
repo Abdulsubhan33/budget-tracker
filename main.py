@@ -6,36 +6,52 @@ def load_data():
     """Load budget data from a JSON file"""
     try:
         with open(DATA_FILE, 'r') as file:
-            return json.load(file)
+            data = json.load(file)
+            # Ensure that the data dictionary contains the expected keys
+            data.setdefault('income', 0)
+            data.setdefault('expenses', 0)
+            data.setdefault('balance', 0)
+            return data
     except FileNotFoundError:
+        print("Data file not found. Starting with a new budget.")
+        return {'income': 0, 'expenses': 0, 'balance': 0}
+    except json.JSONDecodeError as e:
+        print(f"Error decoding the JSON data: {e}. Resetting to default values.")
+        return {'income': 0, 'expenses': 0, 'balance': 0}
+    except Exception as e:
+        print(f"An error occurred: {e}")
         return {'income': 0, 'expenses': 0, 'balance': 0}
 
 def save_data(data):
     """Save budget data to a JSON file"""
-    with open(DATA_FILE, 'w') as file:
-        json.dump(data, file, indent=4)
+    try:
+        with open(DATA_FILE, 'w') as file:
+            json.dump(data, file, indent=4)
+    except IOError as e:
+        print(f"An error occurred while saving the data: {e}")
+
+def update_budget(data, income_change=0, expense_change=0):
+    """Update income, expenses, and balance"""
+    data['income'] += income_change
+    data['expenses'] += expense_change
+    data['balance'] = data['income'] - data['expenses']
+    save_data(data)
 
 def add_income(amount):
     """Add income to the budget."""
-    data = load_data()
-    if amount < 0:
+    if amount <= 0:
         print("Income amount must be positive.")
         return
-    data['income'] += amount
-    # Recalculate balance
-    data['balance'] = data['income'] - data['expenses']
-    save_data(data)
+    data = load_data()
+    update_budget(data, income_change=amount)
 
 def add_expense(amount):
     """Add expense to the budget."""
-    data = load_data()
-    if amount < 0:
+    if amount <= 0:
         print("Expense amount must be positive.")
         return
-    data['expenses'] += amount
-    # Recalculate balance
-    data['balance'] = data['income'] - data['expenses']
-    save_data(data)
+    data = load_data()
+    update_budget(data, expense_change=amount)
 
 def show_summary():
     """Show current budget summary"""
@@ -76,5 +92,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
+    
